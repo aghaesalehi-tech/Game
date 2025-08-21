@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>بازی امتیازی ساده</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      background: #f0f8ff;
+    }
+    h1 {
+      color: #333;
+    }
+    #score, #highscore {
+      font-size: 22px;
+      margin: 10px;
+    }
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 10px;
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 بازی امتیازی</h1>
+  <p id="score">امتیاز: 0</p>
+  <p id="highscore">بهترین رکورد: 0</p>
+  <button onclick="increaseScore()">کلیک کن!</button>
+
+  <script>
+    let score = 0;
+    let highScore = localStorage.getItem("highScore") || 0;
+
+    document.getElementById("highscore").innerText = "بهترین رکورد: " + highScore;
+
+    function increaseScore() {
+      score++;
+      document.getElementById("score").innerText = "امتیاز: " + score;
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+        document.getElementById("highscore").innerText = "بهترین رکورد: " + highScore;
+      }
+    }
+  </script>
+</body>
+</html>
