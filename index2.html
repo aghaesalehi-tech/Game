@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>بازی امتیازی آنلاین</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; margin: auto; }
+    </style>
+</head>
+<body>
+<script>
+/* ====== تنظیمات Firebase ====== */
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ====== فانکشن‌های ذخیره و دریافت رکورد ====== */
+function saveScore(playerName, score){
+    const newScore = db.ref('scores').push();
+    newScore.set({name: playerName, score: score});
+}
+
+function getTopScores(callback){
+    db.ref('scores').orderByChild('score').limitToLast(10).on('value', snapshot => {
+        const scores = [];
+        snapshot.forEach(child => scores.push(child.val()));
+        scores.sort((a,b) => b.score - a.score);
+        callback(scores);
+    });
+}
+
+/* ====== تنظیمات بازی Phaser ====== */
+const config = {
+    type: Phaser.AUTO,
+    width: 480,
+    height: 640,
+    backgroundColor: '#87CEEB',
+    physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+    scene: { preload, create, update }
+};
+
+let player, obstacles, score = 0, scoreText;
+const game = new Phaser.Game(config);
+
+function preload() {
+    this.load.image('player', 'https://i.imgur.com/T5PZ0Gp.png'); // بازیکن
+    this.load.image('obstacle', 'https://i.imgur.com/3tQJt0y.png'); // مانع
+}
+
+function create() {
+    player = this.physics.add.sprite(240, 580, 'player');
+    player.setCollideWorldBounds(true);
+
+    obstacles = this.physics.add.group();
+
+    this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+            const x = Phaser.Math.Between(50, 430);
+            const obs = obstacles.create(x, 0, 'obstacle');
+            obs.setVelocityY(200);
+            obs.setCollideWorldBounds(false);
+        },
+        loop: true
+    });
+
+    this.physics.add.overlap(player, obstacles, hitObstacle, null, this);
+
+    scoreText = this.add.text(16, 16, 'امتیاز: 0', { fontSize: '24px', fill: '#000' });
+
+    this.input.on('pointermove', pointer => {
+        player.x = pointer.x;
+    });
+}
+
+function update() {
+    score += 0.01;
+    scoreText.setText('امتیاز: ' + Math.floor(score));
+
+    obstacles.children.iterate(child => {
+        if (child.y > 640) child.destroy();
+    });
+}
+
+function hitObstacle(player, obstacle) {
+    this.physics.pause();
+    player.setTint(0xff0000);
+
+    const playerName = prompt("نام خود را وارد کنید:");
+    if(playerName) saveScore(playerName, Math.floor(score));
+
+    getTopScores(scores => {
+        let message = "🏆 رکوردهای برتر:\n";
+        scores.forEach((s, i) => {
+            message += `${i+1}. ${s.name}: ${s.score}\n`;
+        });
+        alert(message);
+    });
+}
+</script>
+</body>
+</html>
